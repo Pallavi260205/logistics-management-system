@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Dashboard</title>
+
+<style>
+body {
+    font-family: Arial;
+    background: #f1f3f6;
+    margin: 0;
+}
+
+.header {
+    background: #ff3f6c;
+    color: white;
+    padding: 15px;
+    text-align: center;
+    font-size: 22px;
+}
+
+.container {
+    width: 90%;
+    margin: 30px auto;
+}
+
+.card {
+    background: white;
+    padding: 20px;
+    margin-bottom: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+input, select {
+    padding: 10px;
+    margin: 5px;
+    width: 200px;
+    border-radius: 5px;
+    border: 1px solid #ccc;
+}
+
+button {
+    padding: 10px 20px;
+    background: #ff3f6c;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+.timeline {
+    margin-top: 15px;
+    padding-left: 20px;
+    border-left: 3px solid #ddd;
+}
+
+.step {
+    margin-bottom: 15px;
+    position: relative;
+}
+
+.step::before {
+    content: '';
+    width: 12px;
+    height: 12px;
+    background: #ccc;
+    border-radius: 50%;
+    position: absolute;
+    left: -8px;
+    top: 4px;
+}
+
+.completed::before {
+    background: green;
+}
+
+.stats {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 20px;
+}
+
+.stats .card {
+    flex: 1;
+    margin-right: 10px;
+}
+
+.stats .card:last-child {
+    margin-right: 0;
+}
+
+.map {
+    width: 100%;
+    height: 200px;
+    margin-top: 10px;
+}
+</style>
+</head>
+
+<body>
+
+<div class="header">🚚 Logistics Dashboard</div>
+
+<div class="container">
+
+<div class="stats">
+    <div class="card">
+        <h4>Total shipments</h4>
+        <p>{{ stats.total }}</p>
+    </div>
+    <div class="card">
+        <h4>Delivered</h4>
+        <p>{{ stats.delivered }}</p>
+    </div>
+    <div class="card">
+        <h4>Pending</h4>
+        <p>{{ stats.pending }}</p>
+    </div>
+    <div class="card">
+        <h4>Revenue</h4>
+        <p>₹{{ stats.revenue }}</p>
+    </div>
+</div>
+
+<div class="card">
+<h3>Place New Order</h3>
+<form method="POST" enctype="multipart/form-data">
+    <input type="text" name="product" placeholder="Product Name" required>
+    <input type="number" name="quantity" placeholder="Quantity" required>
+    <input type="text" name="address" placeholder="Delivery Address" required>
+    <input type="text" name="city" placeholder="City" required>
+    <input type="text" name="pincode" placeholder="Pincode" required>
+    <label><input type="checkbox" name="express"> Express delivery (+₹{{ request.environ.get('EXPRESS_FEE',100) }})</label><br>
+    <select name="payment">
+        <option value="COD">Cash on Delivery</option>
+        <option value="Online">Online Payment</option>
+    </select>
+    <input type="file" name="invoice" accept="application/pdf">
+    <button type="submit">Place Order</button>
+</form>
+</div>
+
+<div class="card">
+<h3>Your Orders</h3>
+
+{% for order in orders %}
+<div style="border-bottom:1px solid #ddd; padding:10px;">
+
+    <h4>ID {{ order[0] }} (Qty: {{ order[1] }})</h4>
+    <p>{{ order[2] }}</p>
+    <p><strong>Cost:</strong> ₹{{ order[5] }}</p>
+    {% if order[6] %}<p><strong>OTP sent:</strong> {{ order[6] }}</p>{% endif %}
+
+    <div class="timeline">
+
+        <div class="step completed">
+            Order Placed
+        </div>
+
+        <div class="step {% if order[3] in ['Shipped','Delivered'] %}completed{% endif %}">
+            Shipped
+        </div>
+
+        <div class="step {% if order[3] == 'Delivered' %}completed{% endif %}">
+            Delivered
+        </div>
+
+    </div>
+
+    {% if google_maps_key %}
+    <div id="map-{{ order[0] }}" class="map"></div>
+    <script>
+        function initMap{{ order[0] }}() {
+            var directionsService = new google.maps.DirectionsService();
+            var directionsRenderer = new google.maps.DirectionsRenderer();
+            var map = new google.maps.Map(document.getElementById('map-{{ order[0] }}'), {
+                zoom: 7,
+                center: {lat: 20.5937, lng: 78.9629} // centre of India
+            });
+            directionsRenderer.setMap(map);
+            directionsService.route({
+                origin: '{{ request.environ.get("WAREHOUSE_ADDRESS","Warehouse") }}',
+                destination: '{{ order[2] }}',
+                travelMode: 'DRIVING'
+            }, function(response, status) {
+                if (status === 'OK') {
+                    directionsRenderer.setDirections(response);
+                }
+            });
+        }
+        window.onload = initMap{{ order[0] }};
+    </script>
+    {% endif %}
+
+</div>
+{% endfor %}
+
+</div>
+
+</div>
+
+</body>
+</html>

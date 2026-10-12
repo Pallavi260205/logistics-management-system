@@ -1,0 +1,743 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="LogisticsPro Dashboard — manage your orders and track deliveries.">
+    <title>Dashboard — LogisticsPro</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --primary: #6c63ff;
+            --accent: #ff6584;
+            --success: #22d3a0;
+            --warning: #f59e0b;
+            --dark: #0d0d1a;
+            --surface: #13132a;
+            --surface2: #1a1a3a;
+            --border: rgba(255,255,255,0.08);
+            --border2: rgba(255,255,255,0.14);
+            --text: #e8e8f0;
+            --muted: #8888aa;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--dark);
+            color: var(--text);
+            min-height: 100vh;
+        }
+
+        /* ---- SIDEBAR ---- */
+        .sidebar {
+            position: fixed;
+            top: 0; left: 0;
+            width: 240px;
+            height: 100vh;
+            background: var(--surface);
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            padding: 28px 20px;
+            z-index: 100;
+        }
+
+        .logo {
+            font-size: 20px;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+            margin-bottom: 40px;
+            padding: 0 8px;
+        }
+        .logo span { color: var(--primary); }
+
+        .nav-section {
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: 1.2px;
+            text-transform: uppercase;
+            color: var(--muted);
+            margin-bottom: 10px;
+            padding: 0 8px;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 12px;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--muted);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            margin-bottom: 4px;
+            text-decoration: none;
+        }
+
+        .nav-item:hover { background: rgba(255,255,255,0.05); color: var(--text); }
+        .nav-item.active { background: rgba(108,99,255,0.15); color: var(--primary); font-weight: 600; }
+        .nav-item .icon { font-size: 16px; width: 20px; text-align: center; }
+
+        .sidebar-bottom {
+            margin-top: auto;
+            border-top: 1px solid var(--border);
+            padding-top: 20px;
+        }
+
+        /* ---- MAIN ---- */
+        .main {
+            margin-left: 240px;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Top bar */
+        .topbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 22px 36px;
+            border-bottom: 1px solid var(--border);
+            background: rgba(13,13,26,0.8);
+            backdrop-filter: blur(10px);
+            position: sticky;
+            top: 0;
+            z-index: 50;
+        }
+
+        .topbar-title h2 { font-size: 20px; font-weight: 700; }
+        .topbar-title p { font-size: 13px; color: var(--muted); margin-top: 2px; }
+
+        .topbar-right { display: flex; align-items: center; gap: 12px; }
+
+        .btn {
+            padding: 9px 20px;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            border: none;
+            font-family: 'Inter', sans-serif;
+            transition: all 0.2s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .btn-ghost {
+            background: transparent;
+            border: 1.5px solid var(--border2);
+            color: var(--muted);
+        }
+        .btn-ghost:hover { border-color: var(--primary); color: var(--primary); }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary), #9b59b6);
+            color: white;
+            box-shadow: 0 4px 18px rgba(108,99,255,0.3);
+        }
+        .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 6px 24px rgba(108,99,255,0.45); }
+
+        /* Content area */
+        .content { padding: 32px 36px; flex: 1; }
+
+        /* ---- STATS ---- */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 18px;
+            margin-bottom: 32px;
+        }
+
+        .stat-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 24px;
+            position: relative;
+            overflow: hidden;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .stat-card:hover { transform: translateY(-3px); box-shadow: 0 12px 32px rgba(0,0,0,0.3); }
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: -30px; right: -30px;
+            width: 100px; height: 100px;
+            border-radius: 50%;
+            opacity: 0.08;
+        }
+
+        .stat-card:nth-child(1)::before { background: var(--primary); }
+        .stat-card:nth-child(2)::before { background: var(--success); }
+        .stat-card:nth-child(3)::before { background: var(--warning); }
+        .stat-card:nth-child(4)::before { background: var(--accent); }
+
+        .stat-icon {
+            font-size: 22px;
+            margin-bottom: 14px;
+        }
+
+        .stat-value {
+            font-size: 30px;
+            font-weight: 800;
+            letter-spacing: -1px;
+            margin-bottom: 4px;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            font-weight: 500;
+            color: var(--muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .stat-card:nth-child(1) .stat-value { color: var(--primary); }
+        .stat-card:nth-child(2) .stat-value { color: var(--success); }
+        .stat-card:nth-child(3) .stat-value { color: var(--warning); }
+        .stat-card:nth-child(4) .stat-value { color: var(--accent); }
+
+        /* ---- TWO-COLUMN LAYOUT ---- */
+        .dashboard-cols {
+            display: grid;
+            grid-template-columns: 1fr 380px;
+            gap: 24px;
+            align-items: start;
+        }
+
+        /* ---- ORDER FORM ---- */
+        .panel {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 18px;
+            overflow: hidden;
+        }
+
+        .panel-header {
+            padding: 22px 28px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .panel-header h3 { font-size: 16px; font-weight: 700; }
+        .panel-header p { font-size: 12px; color: var(--muted); margin-top: 2px; }
+
+        .panel-body { padding: 28px; }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 14px;
+            margin-bottom: 14px;
+        }
+
+        .form-group { display: flex; flex-direction: column; gap: 7px; }
+        .form-group.full { grid-column: span 2; }
+
+        label {
+            font-size: 12px;
+            font-weight: 600;
+            color: #a0a0c0;
+            letter-spacing: 0.3px;
+        }
+
+        input[type="text"],
+        input[type="number"],
+        input[type="email"],
+        input[type="password"],
+        input[type="file"],
+        select {
+            padding: 11px 14px;
+            background: rgba(255,255,255,0.05);
+            border: 1.5px solid var(--border2);
+            border-radius: 9px;
+            color: var(--text);
+            font-size: 13px;
+            font-family: 'Inter', sans-serif;
+            transition: all 0.2s ease;
+            outline: none;
+            width: 100%;
+        }
+
+        input[type="file"] { padding: 9px 14px; color: var(--muted); }
+
+        input:focus, select:focus {
+            border-color: var(--primary);
+            background: rgba(108,99,255,0.07);
+            box-shadow: 0 0 0 3px rgba(108,99,255,0.1);
+        }
+
+        input::placeholder { color: #44445a; }
+        select option { background: #1a1a3a; }
+
+        .express-toggle {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 14px;
+            background: rgba(255,255,255,0.03);
+            border: 1.5px solid var(--border);
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            grid-column: span 2;
+        }
+
+        .express-toggle:hover { border-color: var(--warning); background: rgba(245,158,11,0.05); }
+
+        .express-toggle input[type="checkbox"] {
+            width: 18px; height: 18px;
+            accent-color: var(--warning);
+            cursor: pointer;
+        }
+
+        .express-toggle-label { font-size: 13px; font-weight: 500; }
+        .express-toggle-badge {
+            margin-left: auto;
+            background: rgba(245,158,11,0.15);
+            color: var(--warning);
+            border: 1px solid rgba(245,158,11,0.3);
+            padding: 3px 10px;
+            border-radius: 999px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        .btn-submit {
+            width: 100%;
+            padding: 13px;
+            background: linear-gradient(135deg, var(--primary), #9b59b6);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 600;
+            font-family: 'Inter', sans-serif;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            box-shadow: 0 4px 18px rgba(108,99,255,0.3);
+            margin-top: 6px;
+        }
+        .btn-submit:hover { transform: translateY(-2px); box-shadow: 0 8px 28px rgba(108,99,255,0.5); }
+
+        /* ---- ORDERS LIST ---- */
+        .orders-list { display: flex; flex-direction: column; gap: 0; }
+
+        .order-card {
+            padding: 20px 28px;
+            border-bottom: 1px solid var(--border);
+            transition: background 0.2s ease;
+        }
+
+        .order-card:last-child { border-bottom: none; }
+        .order-card:hover { background: rgba(255,255,255,0.02); }
+
+        .order-top {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            margin-bottom: 14px;
+        }
+
+        .order-id { font-size: 11px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; }
+        .order-name { font-size: 15px; font-weight: 700; margin-top: 3px; }
+        .order-address { font-size: 12px; color: var(--muted); margin-top: 3px; }
+
+        .order-meta { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+
+        .badge {
+            padding: 4px 12px;
+            border-radius: 999px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+        .badge-pending   { background: rgba(245,158,11,0.15); color: var(--warning); border: 1px solid rgba(245,158,11,0.25); }
+        .badge-shipped   { background: rgba(108,99,255,0.15); color: #a89cff;        border: 1px solid rgba(108,99,255,0.25); }
+        .badge-delivered { background: rgba(34,211,160,0.15); color: var(--success); border: 1px solid rgba(34,211,160,0.25); }
+
+        .order-cost { font-size: 15px; font-weight: 700; color: var(--success); }
+
+        /* Timeline */
+        .timeline {
+            display: flex;
+            align-items: center;
+            gap: 0;
+            margin: 14px 0;
+        }
+
+        .tl-step {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            flex: 1;
+            position: relative;
+        }
+
+        .tl-step:not(:last-child)::after {
+            content: '';
+            position: absolute;
+            top: 11px;
+            left: 50%;
+            width: 100%;
+            height: 2px;
+            background: var(--border2);
+            z-index: 0;
+        }
+
+        .tl-step.done:not(:last-child)::after { background: var(--primary); }
+
+        .tl-dot {
+            width: 22px; height: 22px;
+            border-radius: 50%;
+            background: var(--surface2);
+            border: 2px solid var(--border2);
+            z-index: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            transition: all 0.3s ease;
+        }
+
+        .tl-step.done .tl-dot {
+            background: var(--primary);
+            border-color: var(--primary);
+            box-shadow: 0 0 10px rgba(108,99,255,0.5);
+        }
+
+        .tl-step.done .tl-dot::after { content: '✓'; color: white; font-size: 10px; font-weight: 700; }
+
+        .tl-label { font-size: 10px; color: var(--muted); margin-top: 6px; font-weight: 500; }
+        .tl-step.done .tl-label { color: var(--primary); }
+
+        /* OTP form */
+        .otp-form {
+            display: flex;
+            gap: 8px;
+            margin-top: 12px;
+        }
+
+        .otp-form input {
+            flex: 1;
+            padding: 10px 14px;
+            font-size: 14px;
+            letter-spacing: 4px;
+            text-align: center;
+            font-weight: 700;
+        }
+
+        .btn-otp {
+            padding: 10px 18px;
+            background: linear-gradient(135deg, var(--success), #16a37f);
+            color: white;
+            border: none;
+            border-radius: 9px;
+            font-size: 13px;
+            font-weight: 600;
+            font-family: 'Inter', sans-serif;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+
+        /* Invoice link */
+        .invoice-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 12px;
+            color: var(--muted);
+            text-decoration: none;
+            padding: 5px 10px;
+            border: 1px solid var(--border2);
+            border-radius: 7px;
+            transition: all 0.2s ease;
+            margin-top: 8px;
+        }
+        .invoice-link:hover { border-color: var(--primary); color: var(--primary); }
+
+        .otp-reveal {
+            margin-top: 10px;
+            padding: 10px 14px;
+            background: rgba(34,211,160,0.08);
+            border: 1px solid rgba(34,211,160,0.2);
+            border-radius: 8px;
+            font-size: 12px;
+            color: var(--success);
+        }
+
+        /* Empty state */
+        .empty-state {
+            padding: 60px 28px;
+            text-align: center;
+        }
+        .empty-state .empty-icon { font-size: 48px; margin-bottom: 16px; }
+        .empty-state h4 { font-size: 16px; font-weight: 600; margin-bottom: 8px; }
+        .empty-state p { font-size: 13px; color: var(--muted); }
+
+        /* Map */
+        .map-container { width: 100%; height: 220px; border-radius: 10px; overflow: hidden; margin-top: 12px; border: 1px solid var(--border); }
+
+        @media (max-width: 1100px) {
+            .stats-grid { grid-template-columns: repeat(2, 1fr); }
+            .dashboard-cols { grid-template-columns: 1fr; }
+        }
+
+        @media (max-width: 760px) {
+            .sidebar { display: none; }
+            .main { margin-left: 0; }
+            .content { padding: 20px 16px; }
+            .topbar { padding: 16px 20px; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- Sidebar -->
+<aside class="sidebar">
+    <div class="logo">🚚 <span>Logistics</span>Pro</div>
+
+    <div class="nav-section">Menu</div>
+    <a href="/dashboard" class="nav-item active" id="nav-dashboard">
+        <span class="icon">📊</span> Dashboard
+    </a>
+    <a href="/dashboard" class="nav-item" id="nav-orders">
+        <span class="icon">📦</span> My Orders
+    </a>
+
+    <div class="nav-section" style="margin-top:24px;">Account</div>
+    {% if user_role == 'admin' %}
+    <a href="/admin" class="nav-item" id="nav-admin">
+        <span class="icon">🛡️</span> Admin Panel
+    </a>
+    {% endif %}
+
+    <div class="sidebar-bottom">
+        <a href="/logout" class="nav-item" id="nav-logout">
+            <span class="icon">🚪</span> Logout
+        </a>
+    </div>
+</aside>
+
+<!-- Main content -->
+<div class="main">
+    <!-- Top bar -->
+    <div class="topbar">
+        <div class="topbar-title">
+            <h2>Dashboard</h2>
+            <p>Welcome back! Here's your shipping overview.</p>
+        </div>
+        <div class="topbar-right">
+            {% if user_role == 'admin' %}
+            <a href="/admin" class="btn btn-ghost" id="topbar-admin">🛡️ Admin</a>
+            {% endif %}
+            <a href="/logout" class="btn btn-ghost" id="topbar-logout">Logout</a>
+        </div>
+    </div>
+
+    <div class="content">
+
+        <!-- Stats -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon">📦</div>
+                <div class="stat-value">{{ stats.total }}</div>
+                <div class="stat-label">Total Orders</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">✅</div>
+                <div class="stat-value">{{ stats.delivered }}</div>
+                <div class="stat-label">Delivered</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">⏳</div>
+                <div class="stat-value">{{ stats.pending }}</div>
+                <div class="stat-label">In Transit</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">💰</div>
+                <div class="stat-value">₹{{ stats.revenue }}</div>
+                <div class="stat-label">Total Spent</div>
+            </div>
+        </div>
+
+        <div class="dashboard-cols">
+
+            <!-- Orders list -->
+            <div class="panel" id="orders-panel">
+                <div class="panel-header">
+                    <div>
+                        <h3>Your Shipments</h3>
+                        <p>All your current and past orders</p>
+                    </div>
+                </div>
+
+                <div class="orders-list">
+                    {% if orders %}
+                    {% for order in orders %}
+                    <div class="order-card" id="order-{{ order[0] }}">
+                        <div class="order-top">
+                            <div>
+                                <div class="order-id">Order #{{ order[0] }}</div>
+                                <div class="order-name">{{ order[1] }}</div>
+                                <div class="order-address">📍 {{ order[3] }}</div>
+                            </div>
+                            <div style="text-align:right;">
+                                <div class="order-cost">₹{{ order[5] }}</div>
+                                <div class="order-meta" style="justify-content:flex-end; margin-top:6px;">
+                                    {% if order[4] == 'Pending' %}
+                                    <span class="badge badge-pending">⏳ Pending</span>
+                                    {% elif order[4] == 'Shipped' %}
+                                    <span class="badge badge-shipped">🚚 Shipped</span>
+                                    {% elif order[4] == 'Delivered' %}
+                                    <span class="badge badge-delivered">✅ Delivered</span>
+                                    {% else %}
+                                    <span class="badge badge-pending">{{ order[4] }}</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Timeline -->
+                        <div class="timeline">
+                            <div class="tl-step done">
+                                <div class="tl-dot"></div>
+                                <div class="tl-label">Placed</div>
+                            </div>
+                            <div class="tl-step {% if order[4] in ['Shipped','Delivered'] %}done{% endif %}">
+                                <div class="tl-dot"></div>
+                                <div class="tl-label">Shipped</div>
+                            </div>
+                            <div class="tl-step {% if order[4] == 'Delivered' %}done{% endif %}">
+                                <div class="tl-dot"></div>
+                                <div class="tl-label">Delivered</div>
+                            </div>
+                        </div>
+
+                        {% if order[6] %}
+                        <div class="otp-reveal">🔐 Delivery OTP: <strong>{{ order[6] }}</strong></div>
+                        {% endif %}
+
+                        {% if order[4] == 'Shipped' %}
+                        <form action="/verify_otp/{{ order[0] }}" method="POST" class="otp-form" id="otp-form-{{ order[0] }}">
+                            <input type="text" name="otp" placeholder="Enter OTP" maxlength="6" id="otp-input-{{ order[0] }}">
+                            <button type="submit" class="btn-otp" id="otp-btn-{{ order[0] }}">✔ Verify</button>
+                        </form>
+                        {% endif %}
+
+                        <a href="/invoice/{{ order[0] }}" class="invoice-link" id="invoice-{{ order[0] }}">🧾 Download Invoice</a>
+
+                        {% if google_maps_key %}
+                        <div id="map-{{ order[0] }}" class="map-container"></div>
+                        <script>
+                            function initMap{{ order[0] }}() {
+                                var ds = new google.maps.DirectionsService();
+                                var dr = new google.maps.DirectionsRenderer({ suppressMarkers: false });
+                                var map = new google.maps.Map(document.getElementById('map-{{ order[0] }}'), {
+                                    zoom: 7,
+                                    center: { lat: 20.5937, lng: 78.9629 },
+                                    styles: [
+                                        { elementType: 'geometry', stylers: [{ color: '#1a1a3a' }] },
+                                        { elementType: 'labels.text.fill', stylers: [{ color: '#8888aa' }] },
+                                        { featureType: 'road', elementType: 'geometry', stylers: [{ color: '#2d2d5a' }] },
+                                        { featureType: 'water', elementType: 'geometry', stylers: [{ color: '#0d1a4a' }] }
+                                    ]
+                                });
+                                dr.setMap(map);
+                                ds.route({
+                                    origin: '{{ request.environ.get("WAREHOUSE_ADDRESS","Warehouse") }}',
+                                    destination: '{{ order[3] }}',
+                                    travelMode: 'DRIVING'
+                                }, function(res, status) {
+                                    if (status === 'OK') dr.setDirections(res);
+                                });
+                            }
+                            window.addEventListener('load', initMap{{ order[0] }});
+                        </script>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+
+                    {% else %}
+                    <div class="empty-state">
+                        <div class="empty-icon">📭</div>
+                        <h4>No orders yet</h4>
+                        <p>Place your first order using the form →</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- New Order form -->
+            <div class="panel" id="new-order-panel">
+                <div class="panel-header">
+                    <div>
+                        <h3>Place New Order</h3>
+                        <p>Fill in delivery details below</p>
+                    </div>
+                </div>
+                <div class="panel-body">
+                    <form method="POST" enctype="multipart/form-data" id="order-form">
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label for="product">Product Name</label>
+                                <input type="text" id="product" name="product" placeholder="e.g. Electronics" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="quantity">Quantity</label>
+                                <input type="number" id="quantity" name="quantity" placeholder="1" min="1" required>
+                            </div>
+                            <div class="form-group full">
+                                <label for="address">Delivery Address</label>
+                                <input type="text" id="address" name="address" placeholder="Street address" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="city">City</label>
+                                <input type="text" id="city" name="city" placeholder="Mumbai" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="pincode">Pincode</label>
+                                <input type="text" id="pincode" name="pincode" placeholder="400001" required>
+                            </div>
+                            <div class="form-group full">
+                                <label for="payment">Payment Method</label>
+                                <select id="payment" name="payment">
+                                    <option value="COD">💵 Cash on Delivery</option>
+                                    <option value="Online">💳 Online Payment</option>
+                                </select>
+                            </div>
+                            <label class="express-toggle" for="express">
+                                <input type="checkbox" id="express" name="express">
+                                <span class="express-toggle-label">⚡ Express Delivery</span>
+                                <span class="express-toggle-badge">+₹{{ express_fee }}</span>
+                            </label>
+                            <div class="form-group full">
+                                <label for="invoice">Upload Invoice (PDF)</label>
+                                <input type="file" id="invoice" name="invoice" accept="application/pdf">
+                            </div>
+                        </div>
+                        <button type="submit" class="btn-submit" id="place-order-btn">📦 Place Order</button>
+                    </form>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+{% if google_maps_key %}
+<script src="https://maps.googleapis.com/maps/api/js?key={{ google_maps_key }}&libraries=places" defer></script>
+{% endif %}
+
+</body>
+</html>
